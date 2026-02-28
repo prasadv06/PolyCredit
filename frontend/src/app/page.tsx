@@ -247,37 +247,50 @@ export default function Dashboard() {
         logToTerminal("[Portfolio] Positions empty — deriving holdings from filled orders...");
         const holdingsMap: Record<string, { marketId: number; tokenId: string; side: string; quantity: number; question: string }> = {};
 
+        // Collect unique marketIds to fetch their names
+        const uniqueMarketIds = [...new Set(filledOrders.map((o: any) => o.marketId))];
+        const marketNames: Record<number, string> = {};
+        for (const mid of uniqueMarketIds) {
+          const local = liveMarkets.find(m => m.id === `predict-${mid}`);
+          if (local) {
+            marketNames[mid as number] = local.question;
+          } else {
+            // Fetch market info from API
+            try {
+              const mRes = await axios.get(`/api/predict/markets?marketId=${mid}`);
+              const mkts = mRes.data?.data?.markets || mRes.data?.data?.categories?.[0]?.markets || [];
+              if (mkts.length > 0) {
+                marketNames[mid as number] = mkts[0].question || mkts[0].title || `Market #${mid}`;
+              } else {
+                marketNames[mid as number] = `Market #${mid}`;
+              }
+            } catch { marketNames[mid as number] = `Market #${mid}`; }
+          }
+        }
+
         for (const ord of filledOrders) {
           const tokenId = ord.order?.tokenId || "unknown";
           const marketId = ord.marketId;
           const isBuy = ord.order?.side === 0;
-          const filled = parseFloat(ord.amountFilled || "0") / 1e18;
-
-          // Find the market question from liveMarkets
-          const market = liveMarkets.find(m => m.id === `predict-${marketId}`);
-          const question = market?.question || `Market #${marketId}`;
+          const question = marketNames[marketId] || `Market #${marketId}`;
 
           // Determine YES/NO side from tokenId
+          const market = liveMarkets.find(m => m.id === `predict-${marketId}`);
           let side = "YES";
-          if (market) {
-            side = (market as any).noTokenId === tokenId ? "NO" : "YES";
-          }
+          if (market && (market as any).noTokenId === tokenId) side = "NO";
 
           const key = `${marketId}-${tokenId}`;
           if (!holdingsMap[key]) {
             holdingsMap[key] = { marketId, tokenId, side, quantity: 0, question };
           }
 
+          // amountFilled is the net share amount that was filled
+          const filledShares = parseFloat(ord.amountFilled || "0") / 1e18;
+
           if (isBuy) {
-            // For BUY: makerAmount is USDT paid, takerAmount is shares received
-            const sharesReceived = parseFloat(ord.order?.takerAmount || "0") / 1e18;
-            const fillRatio = filled > 0 ? filled / (parseFloat(ord.amount || "1") / 1e18) : 1;
-            holdingsMap[key].quantity += sharesReceived * fillRatio;
+            holdingsMap[key].quantity += filledShares;
           } else {
-            // For SELL: makerAmount is shares sold
-            const sharesSold = parseFloat(ord.order?.makerAmount || "0") / 1e18;
-            const fillRatio = filled > 0 ? filled / (parseFloat(ord.amount || "1") / 1e18) : 1;
-            holdingsMap[key].quantity -= sharesSold * fillRatio;
+            holdingsMap[key].quantity -= filledShares;
           }
         }
 
@@ -287,7 +300,7 @@ export default function Dashboard() {
           .map(h => ({
             asset: { market: { question: h.question }, onChainId: h.tokenId, price: "0" },
             side: h.side,
-            quantity: h.quantity.toString(),
+            quantity: h.quantity.toFixed(4),
             marketId: h.marketId,
           }));
 
@@ -564,7 +577,7 @@ export default function Dashboard() {
                           {pos.asset?.market?.question || "Unknown Market"}
                         </TableCell>
                         <TableCell><Badge className={pos.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{pos.side}</Badge></TableCell>
-                        <TableCell className="text-right font-mono">{parseFloat(pos.quantity).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">{(parseFloat(pos.quantity) || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     {portfolioPositions.length === 0 && <TableRow><TableCell colSpan={3} className="text-center py-8 text-zinc-500">No holdings found</TableCell></TableRow>}
