@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { UnifiedMarket } from "../../../shared/types";
-import { BrowserProvider, parseUnits, formatUnits } from "ethers";
+import { BrowserProvider, parseUnits, formatUnits, ethers } from "ethers";
 import { OrderBuilder, ChainId, Side } from "@predictdotfun/sdk";
 import axios from "axios";
 import { fetchPredictMarkets } from "@/lib/predict-client";
@@ -459,6 +459,17 @@ export default function Dashboard() {
       const provider = new BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const builder = await OrderBuilder.make(ChainId.BnbMainnet, signer as any);
+      const ctfAddress = selectedMarket.isYieldBearing ? BNB_MAINNET_CTF_YIELD : BNB_MAINNET_CTF_NON_YIELD;
+      const tokenIdToSell = side === "YES" ? selectedMarket.yesTokenId! : selectedMarket.noTokenId!;
+
+      // Diagnostic check: How many shares do they ACTUALLY own?
+      try {
+        const ctfContract = new ethers.Contract(ctfAddress as string, [{ type: "function", name: "balanceOf", inputs: [{ name: "account", type: "address" }, { name: "id", type: "uint256" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" }], provider);
+        const actualBalance = await ctfContract.balanceOf(signer.address, BigInt(tokenIdToSell));
+        logToTerminal(`[DIAGNOSTIC] Wallet ${signer.address} actual on-chain balance of Token ${tokenIdToSell}: ${formatUnits(actualBalance, 18)} shares`);
+      } catch (err: any) {
+        logToTerminal(`[DIAGNOSTIC] Failed to read on-chain balance: ${err.message}`);
+      }
 
       logToTerminal("[Trade Processing] Requesting ERC1155 CTF Approval (if needed)...");
       await builder.setCtfExchangeApproval(selectedMarket.isNegRisk || false, selectedMarket.isYieldBearing || false);
@@ -469,9 +480,11 @@ export default function Dashboard() {
       const quantityWei = parseUnits((parseFloat(tradeAmount) / parseFloat(priceStr)).toFixed(6), 18);
       const { makerAmount, takerAmount, pricePerShare } = builder.getLimitOrderAmounts({ side: Side.SELL, pricePerShareWei: priceWei, quantityWei });
 
+      logToTerminal(`[Trade Processing] Trying to sell ${formatUnits(makerAmount, 18)} shares for ${formatUnits(takerAmount, 18)} USDT...`);
+
       const order = builder.buildOrder("LIMIT", {
         maker: signer.address, signer: signer.address, side: Side.SELL,
-        tokenId: side === "YES" ? selectedMarket.yesTokenId! : selectedMarket.noTokenId!,
+        tokenId: tokenIdToSell,
         makerAmount, takerAmount, nonce: BigInt(0), feeRateBps: selectedMarket.feeRateBps || 0
       });
 
