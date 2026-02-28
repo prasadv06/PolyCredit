@@ -460,6 +460,9 @@ export default function Dashboard() {
       const signer = await provider.getSigner();
       const builder = await OrderBuilder.make(ChainId.BnbMainnet, signer as any);
 
+      logToTerminal("[Trade Processing] Requesting ERC1155 CTF Approval (if needed)...");
+      await builder.setCtfExchangeApproval(selectedMarket.isNegRisk || false, selectedMarket.isYieldBearing || false);
+
       logToTerminal("[Trade Processing] (Sell) Building limit order...");
       const priceStr = side === "YES" ? selectedMarket.yesPrice.toFixed(4) : selectedMarket.noPrice.toFixed(4);
       const priceWei = parseUnits(priceStr, 18);
