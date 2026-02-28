@@ -284,13 +284,18 @@ export default function Dashboard() {
             holdingsMap[key] = { marketId, tokenId, side, quantity: 0, question };
           }
 
-          // amountFilled is the net share amount that was filled
-          const filledShares = parseFloat(ord.amountFilled || "0") / 1e18;
+          // For BUY (side=0): amount & amountFilled are in USDT. Shares = amountFilled * (takerAmount / makerAmount)
+          // For SELL (side=1): amount & amountFilled are in shares directly
+          const filledRaw = parseFloat(ord.amountFilled || "0") / 1e18;
 
           if (isBuy) {
-            holdingsMap[key].quantity += filledShares;
+            const makerAmt = parseFloat(ord.order?.makerAmount || "1") / 1e18;  // USDT
+            const takerAmt = parseFloat(ord.order?.takerAmount || "1") / 1e18;  // shares
+            const pricePerShare = makerAmt > 0 ? makerAmt / takerAmt : 1;
+            const sharesReceived = filledRaw / pricePerShare;
+            holdingsMap[key].quantity += sharesReceived;
           } else {
-            holdingsMap[key].quantity -= filledShares;
+            holdingsMap[key].quantity -= filledRaw;
           }
         }
 
@@ -569,18 +574,28 @@ export default function Dashboard() {
               </TabsList>
               <TabsContent value="holdings" className="mt-4 bg-zinc-900/30 rounded-xl border border-zinc-800">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Asset</TableHead><TableHead>Side</TableHead><TableHead className="text-right">Shares</TableHead></TableRow></TableHeader>
+                  <TableHeader>
+                    <TableRow className="border-zinc-800">
+                      <TableHead className="text-zinc-500">Market</TableHead>
+                      <TableHead className="text-zinc-500">Side</TableHead>
+                      <TableHead className="text-zinc-500">Price</TableHead>
+                      <TableHead className="text-zinc-500 text-right">Shares</TableHead>
+                    </TableRow>
+                  </TableHeader>
                   <TableBody>
-                    {portfolioPositions.map((pos, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-semibold text-xs truncate max-w-[300px]">
-                          {pos.asset?.market?.question || "Unknown Market"}
-                        </TableCell>
-                        <TableCell><Badge className={pos.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{pos.side}</Badge></TableCell>
-                        <TableCell className="text-right font-mono">{(parseFloat(pos.quantity) || 0).toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                    {portfolioPositions.length === 0 && <TableRow><TableCell colSpan={3} className="text-center py-8 text-zinc-500">No holdings found</TableCell></TableRow>}
+                    {portfolioPositions.map((pos: any, idx: number) => {
+                      const market = liveMarkets.find(m => m.id === `predict-${pos.marketId}`);
+                      const question = market?.question || pos.asset?.market?.question || `Market #${pos.marketId || "?"}`;
+                      return (
+                        <TableRow key={idx} className="border-zinc-800">
+                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{question}</TableCell>
+                          <TableCell><Badge className={pos.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{pos.side}</Badge></TableCell>
+                          <TableCell className="font-mono text-xs">${pos.asset?.price && parseFloat(pos.asset.price) > 0 ? parseFloat(pos.asset.price).toFixed(4) : "0.5000"}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{(parseFloat(pos.quantity) || 0).toFixed(2)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {portfolioPositions.length === 0 && <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </TabsContent>
