@@ -222,17 +222,81 @@ export default function Dashboard() {
       const jwt = await ensureValidJwt(signer);
       const lowerAddr = address.toLowerCase();
 
+      // 1. Try positions endpoint first
       const posRes = await axios.get(`/api/predict/portfolio?walletId=${lowerAddr}`, { headers: { Authorization: `Bearer ${jwt}` } });
-      setPortfolioPositions(posRes.data?.data || []);
-      logToTerminal("[Portfolio Load Success]", JSON.stringify(posRes.data?.data || [], null, 2));
+      const positions = posRes.data?.data || [];
+      logToTerminal("[Portfolio Load] Positions API:", JSON.stringify(positions, null, 2));
 
-      const activeRes = await axios.get(`/api/predict/orders?walletId=${lowerAddr}&status=OPEN`, { headers: { Authorization: `Bearer ${jwt}` } });
+      // 2. Fetch filled orders (trade history)
+      const histRes = await axios.get(`/api/predict/orders?status=FILLED`, { headers: { Authorization: `Bearer ${jwt}` } });
+      const filledOrders = histRes.data?.data || [];
+      setPortfolioHistory(filledOrders);
+      logToTerminal("[Portfolio Load] Filled Orders:", JSON.stringify(filledOrders.length));
+
+      // 3. Fetch active/open orders
+      const activeRes = await axios.get(`/api/predict/orders?status=OPEN`, { headers: { Authorization: `Bearer ${jwt}` } });
       setPortfolioOrders(activeRes.data?.data || []);
-      logToTerminal("[Portfolio Active Load]", JSON.stringify(activeRes.data?.data || [], null, 2));
+      logToTerminal("[Portfolio Load] Open Orders:", JSON.stringify((activeRes.data?.data || []).length));
 
-      const histRes = await axios.get(`/api/predict/orders?walletId=${lowerAddr}&status=FILLED`, { headers: { Authorization: `Bearer ${jwt}` } });
-      setPortfolioHistory(histRes.data?.data || []);
-      logToTerminal("[Portfolio History Load]", JSON.stringify(histRes.data?.data || [], null, 2));
+      // 4. If positions API returned data, use it directly
+      if (positions.length > 0) {
+        setPortfolioPositions(positions);
+        logToTerminal("[Portfolio] Using positions API data");
+      } else if (filledOrders.length > 0) {
+        // 5. Derive holdings from filled orders
+        logToTerminal("[Portfolio] Positions empty — deriving holdings from filled orders...");
+        const holdingsMap: Record<string, { marketId: number; tokenId: string; side: string; quantity: number; question: string }> = {};
+
+        for (const ord of filledOrders) {
+          const tokenId = ord.order?.tokenId || "unknown";
+          const marketId = ord.marketId;
+          const isBuy = ord.order?.side === 0;
+          const filled = parseFloat(ord.amountFilled || "0") / 1e18;
+
+          // Find the market question from liveMarkets
+          const market = liveMarkets.find(m => m.id === `predict-${marketId}`);
+          const question = market?.question || `Market #${marketId}`;
+
+          // Determine YES/NO side from tokenId
+          let side = "YES";
+          if (market) {
+            side = (market as any).noTokenId === tokenId ? "NO" : "YES";
+          }
+
+          const key = `${marketId}-${tokenId}`;
+          if (!holdingsMap[key]) {
+            holdingsMap[key] = { marketId, tokenId, side, quantity: 0, question };
+          }
+
+          if (isBuy) {
+            // For BUY: makerAmount is USDT paid, takerAmount is shares received
+            const sharesReceived = parseFloat(ord.order?.takerAmount || "0") / 1e18;
+            const fillRatio = filled > 0 ? filled / (parseFloat(ord.amount || "1") / 1e18) : 1;
+            holdingsMap[key].quantity += sharesReceived * fillRatio;
+          } else {
+            // For SELL: makerAmount is shares sold
+            const sharesSold = parseFloat(ord.order?.makerAmount || "0") / 1e18;
+            const fillRatio = filled > 0 ? filled / (parseFloat(ord.amount || "1") / 1e18) : 1;
+            holdingsMap[key].quantity -= sharesSold * fillRatio;
+          }
+        }
+
+        // Convert to positions array, filter out zero/negative balances
+        const derivedPositions = Object.values(holdingsMap)
+          .filter(h => h.quantity > 0.001)
+          .map(h => ({
+            asset: { market: { question: h.question }, onChainId: h.tokenId, price: "0" },
+            side: h.side,
+            quantity: h.quantity.toString(),
+            marketId: h.marketId,
+          }));
+
+        setPortfolioPositions(derivedPositions);
+        logToTerminal("[Portfolio] Derived holdings:", JSON.stringify(derivedPositions, null, 2));
+      } else {
+        setPortfolioPositions([]);
+        logToTerminal("[Portfolio] No positions or filled orders found");
+      }
     } catch (e: any) {
       logToTerminal("[Portfolio Error]", e.message, "error");
     } finally {
@@ -536,23 +600,33 @@ export default function Dashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-zinc-800">
-                      <TableHead className="text-zinc-500">Hash</TableHead>
+                      <TableHead className="text-zinc-500">Market</TableHead>
                       <TableHead className="text-zinc-500">Action</TableHead>
                       <TableHead className="text-zinc-500">Price</TableHead>
-                      <TableHead className="text-zinc-500 text-right">Shares</TableHead>
+                      <TableHead className="text-zinc-500 text-right">Filled</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {portfolioHistory.length === 0 ? (
                       <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No trade history found</TableCell></TableRow>
-                    ) : portfolioHistory.map((ord, idx) => (
-                      <TableRow key={idx} className="border-zinc-800">
-                        <TableCell className="font-mono text-[10px] text-zinc-400">{ord.id.slice(0, 10)}...</TableCell>
-                        <TableCell><Badge className={ord.order?.side === 0 ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}>{ord.order?.side === 0 ? "BUY" : "SELL"}</Badge></TableCell>
-                        <TableCell className="font-mono text-xs">${ord.order?.makerAmount && ord.order?.takerAmount ? (parseFloat(ord.order.takerAmount) / parseFloat(ord.order.makerAmount)).toFixed(2) : "0.00"}</TableCell>
-                        <TableCell className="text-right font-mono text-xs">{(parseFloat(ord.amount || "0") / 1e18).toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
+                    ) : portfolioHistory.map((ord: any, idx: number) => {
+                      const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
+                      const question = market?.question || `Market #${ord.marketId}`;
+                      const isBuy = ord.order?.side === 0;
+                      const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
+                      const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
+                      const price = isBuy && takerAmt > 0 ? (makerAmt / takerAmt).toFixed(4) : makerAmt > 0 ? (takerAmt / makerAmt).toFixed(4) : "0.00";
+                      const filled = parseFloat(ord.amountFilled || "0") / 1e18;
+                      const total = parseFloat(ord.amount || "0") / 1e18;
+                      return (
+                        <TableRow key={idx} className="border-zinc-800">
+                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{question}</TableCell>
+                          <TableCell><Badge className={isBuy ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}>{isBuy ? "BUY" : "SELL"}</Badge></TableCell>
+                          <TableCell className="font-mono text-xs">${price}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{filled.toFixed(2)} / {total.toFixed(2)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TabsContent>
