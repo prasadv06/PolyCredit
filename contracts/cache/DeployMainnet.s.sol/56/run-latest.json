@@ -1,22 +1,22 @@
 {
   "transactions": [
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     },
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     },
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     },
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     },
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     },
     {
-      "rpc": "https://bsc-dataseed.bnbchain.org"
+      "rpc": "https://bsc-dataseed.binance.org/"
     }
   ]
 }

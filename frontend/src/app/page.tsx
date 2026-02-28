@@ -76,6 +76,27 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState<boolean>(false);
 
   const derivedHoldings = useMemo(() => {
+    if (portfolioPositions && portfolioPositions.length > 0) {
+      return portfolioPositions.map((pos: any) => {
+        const sideInput = pos.outcome?.name?.toUpperCase() || "";
+        const side = sideInput === "UP" || sideInput === "YES" ? "YES" : "NO";
+        const shares = parseFloat(pos.amount || "0") / 1e18;
+        const avgPrice = parseFloat(pos.averageBuyPriceUsd || "0");
+        return {
+          asset: {
+            id: `${pos.market?.id}-${side}`,
+            market: { question: pos.market?.question, isYieldBearing: pos.market?.isYieldBearing },
+            onChainId: pos.outcome?.onChainId,
+            price: pos.valueUsd ? (parseFloat(pos.valueUsd) / (shares || 1)).toString() : "0"
+          },
+          side,
+          quantity: shares.toString(),
+          totalCost: shares * avgPrice,
+          avgPrice: avgPrice.toString()
+        };
+      }).filter(h => parseFloat(h.quantity) > 0.001);
+    }
+
     const netMap: Record<string, any> = {};
     for (const ord of portfolioHistory) {
       const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
@@ -117,7 +138,7 @@ export default function Dashboard() {
         totalCost: h.totalCost,
         avgPrice: h.shares > 0 ? (h.totalCost / h.shares).toString() : "0"
       }));
-  }, [portfolioHistory, liveMarkets]);
+  }, [portfolioPositions, portfolioHistory, liveMarkets]);
 
   // --- On-chain vault stats ---
   const { data: totalPoolLiq, refetch: refetchPool } = useReadContract({
@@ -635,7 +656,7 @@ export default function Dashboard() {
 
             <Tabs defaultValue="holdings" className="space-y-6">
               <TabsList className="bg-zinc-900/40 border border-zinc-800/50 p-1.5 rounded-2xl inline-flex h-auto">
-                <TabsTrigger value="holdings" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-semibold transition-all">Holdings ({portfolioHistory.length > 0 ? "✓" : "0"})</TabsTrigger>
+                <TabsTrigger value="holdings" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-semibold transition-all">Holdings ({derivedHoldings.length > 0 ? derivedHoldings.length : "0"})</TabsTrigger>
                 <TabsTrigger value="active" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-zinc-800 data-[state=active]:text-white font-semibold transition-all">Active Orders ({portfolioOrders.length})</TabsTrigger>
                 <TabsTrigger value="history" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-zinc-800 data-[state=active]:text-white font-semibold transition-all">Trade History</TabsTrigger>
               </TabsList>
