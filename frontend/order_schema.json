@@ -1,0 +1,28 @@
+{
+  "order": {
+    "hash": "0xd9a2d75e520873f5aaedb2212059c9c87140e9e759191ba0e2f45901ee3dcd0a",
+    "salt": "1821582880",
+    "maker": "0x4C3dCc47C2A9da23c2BAc680cf23364A39fc6d6A",
+    "signer": "0x4C3dCc47C2A9da23c2BAc680cf23364A39fc6d6A",
+    "taker": "0x0000000000000000000000000000000000000000",
+    "tokenId": "98150791689935828448433118991513076134898844056542404775754967883836431658505",
+    "makerAmount": "1960000000000000000",
+    "takerAmount": "980000000000000000",
+    "expiration": 4102444800,
+    "nonce": "0",
+    "feeRateBps": "200",
+    "side": 1,
+    "signatureType": 0,
+    "signature": "0xc9ad78c5cc785e020043840cf84e6b6e1a4fd0250787f0aa7e0b25ef5d79445022d8a6cc1919a666fc9680be1bb7a05b843de55c5f672829a3351865dbda3b391c"
+  },
+  "id": "15739086",
+  "marketId": 11189,
+  "currency": "USDT",
+  "amount": "1960000000000000000",
+  "amountFilled": "1960000000000000000",
+  "isNegRisk": false,
+  "isYieldBearing": true,
+  "strategy": "LIMIT",
+  "status": "FILLED",
+  "rewardEarningRate": 0
+}
