@@ -567,22 +567,22 @@ export default function Dashboard() {
   };
 
   const renderMarketCard = (market: UnifiedMarket) => (
-    <Card key={market.id} className={`group cursor-pointer transition-all border-zinc-800 hover:border-indigo-500/50 bg-zinc-950/40 backdrop-blur-md ${selectedMarketId === market.id ? 'ring-2 ring-indigo-500 bg-zinc-900/60' : ''}`} onClick={() => setSelectedMarketId(market.id)}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-bold flex items-center gap-2">{market.question}</CardTitle>
-          <Badge variant={market.platform === "predict" ? "default" : "secondary"} className="text-[10px]">{market.platform}</Badge>
+    <Card key={market.id} className={`group cursor-pointer transition-all duration-300 border-zinc-800/40 hover:border-indigo-500/30 bg-zinc-900/20 hover:bg-zinc-900/40 backdrop-blur-md shadow-lg hover:shadow-indigo-500/10 ${selectedMarketId === market.id ? 'ring-1 ring-indigo-500/50 bg-zinc-900/60' : ''}`} onClick={() => setSelectedMarketId(market.id)}>
+      <CardHeader className="pb-3 pt-5 px-5">
+        <div className="flex justify-between items-start gap-4">
+          <CardTitle className="text-sm font-semibold leading-snug text-zinc-200 group-hover:text-white transition-colors">{market.question}</CardTitle>
+          <Badge variant="outline" className="text-[9px] uppercase tracking-wider bg-black/50 border-zinc-800 text-zinc-400">{market.platform}</Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-3">
-          <div className="flex-1 bg-zinc-900/50 p-2 rounded-xl flex flex-col items-center border border-zinc-800/50">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase">Yes</span>
-            <span className="text-sm font-mono text-green-400 font-bold">${market.yesPrice.toFixed(2)}</span>
+      <CardContent className="px-5 pb-5">
+        <div className="flex gap-2">
+          <div className="flex-1 bg-black/40 p-2.5 rounded-lg flex flex-col items-center border border-zinc-800/30 group-hover:bg-black/60 transition-colors">
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-0.5">Yes</span>
+            <span className="text-sm font-mono text-emerald-400 font-medium">${market.yesPrice.toFixed(2)}</span>
           </div>
-          <div className="flex-1 bg-zinc-900/50 p-2 rounded-xl flex flex-col items-center border border-zinc-800/50">
-            <span className="text-[10px] text-zinc-500 font-bold uppercase">No</span>
-            <span className="text-sm font-mono text-red-400 font-bold">${market.noPrice.toFixed(2)}</span>
+          <div className="flex-1 bg-black/40 p-2.5 rounded-lg flex flex-col items-center border border-zinc-800/30 group-hover:bg-black/60 transition-colors">
+            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-0.5">No</span>
+            <span className="text-sm font-mono text-rose-400 font-medium">${market.noPrice.toFixed(2)}</span>
           </div>
         </div>
       </CardContent>
@@ -624,105 +624,111 @@ export default function Dashboard() {
 
       <main className="pt-32 pb-8 px-4 sm:px-8 max-w-7xl mx-auto w-full flex-1">
         {activeView === 'portfolio' ? (
-          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-center bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
+          <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-between items-center bg-zinc-900/30 backdrop-blur-md p-8 rounded-3xl border border-zinc-800/50 shadow-2xl">
               <div>
-                <h2 className="text-2xl font-bold text-indigo-400">Mainnet Portfolio</h2>
-                <p className="text-zinc-500 text-sm">Real-time Predict.fun holdings & debt</p>
+                <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-1">Mainnet Portfolio</h2>
+                <p className="text-zinc-500 font-medium tracking-wide">Real-time Predict.fun holdings & debt</p>
               </div>
-              <Button onClick={loadPortfolio} variant="outline" size="sm">Refresh</Button>
+              <Button onClick={loadPortfolio} variant="outline" className="border-zinc-800 bg-black/50 hover:bg-zinc-900 shadow-inner">Refresh Data</Button>
             </div>
 
-            <Tabs defaultValue="holdings">
-              <TabsList className="bg-zinc-900 border border-zinc-800">
-                <TabsTrigger value="holdings">Holdings ({portfolioHistory.length > 0 ? "✓" : "0"})</TabsTrigger>
-                <TabsTrigger value="active">Active Orders ({portfolioOrders.length})</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
+            <Tabs defaultValue="holdings" className="space-y-6">
+              <TabsList className="bg-zinc-900/40 border border-zinc-800/50 p-1.5 rounded-2xl inline-flex h-auto">
+                <TabsTrigger value="holdings" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/20 font-semibold transition-all">Holdings ({portfolioHistory.length > 0 ? "✓" : "0"})</TabsTrigger>
+                <TabsTrigger value="active" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-zinc-800 data-[state=active]:text-white font-semibold transition-all">Active Orders ({portfolioOrders.length})</TabsTrigger>
+                <TabsTrigger value="history" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-zinc-800 data-[state=active]:text-white font-semibold transition-all">Trade History</TabsTrigger>
               </TabsList>
-              <TabsContent value="holdings" className="mt-4 bg-zinc-900/30 rounded-xl border border-zinc-800">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-zinc-800">
-                      <TableHead className="text-zinc-500">Market</TableHead>
-                      <TableHead className="text-zinc-500">Side</TableHead>
-                      <TableHead className="text-zinc-500">Avg Price</TableHead>
-                      <TableHead className="text-zinc-500 text-right">Shares</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {derivedHoldings.length === 0 ? (
-                      <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found — trade to see positions here</TableCell></TableRow>
-                    ) : (
-                      derivedHoldings.map((h, idx) => (
-                        <TableRow key={idx} className="border-zinc-800">
-                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{h.asset.market.question}</TableCell>
-                          <TableCell><Badge className={h.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{h.side}</Badge></TableCell>
-                          <TableCell className="font-mono text-xs">${parseFloat(h.avgPrice).toFixed(4)}</TableCell>
-                          <TableCell className="text-right font-mono text-xs">{parseFloat(h.quantity).toFixed(2)}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-              <TabsContent value="active" className="mt-4 bg-zinc-900/30 rounded-xl border border-zinc-800">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-zinc-800">
-                      <TableHead className="text-zinc-500">Order ID</TableHead>
-                      <TableHead className="text-zinc-500">Action</TableHead>
-                      <TableHead className="text-zinc-500">Price</TableHead>
-                      <TableHead className="text-zinc-500 text-right">Progress</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {portfolioOrders.length === 0 ? (
-                      <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No open orders found</TableCell></TableRow>
-                    ) : portfolioOrders.map((ord, idx) => (
-                      <TableRow key={idx} className="border-zinc-800">
-                        <TableCell className="font-mono text-[10px] text-zinc-400">{ord.id.slice(0, 10)}...</TableCell>
-                        <TableCell><Badge className={ord.order?.side === 0 ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}>{ord.order?.side === 0 ? "BUY" : "SELL"}</Badge></TableCell>
-                        <TableCell className="font-mono text-xs">${ord.order?.makerAmount && ord.order?.takerAmount ? (parseFloat(ord.order.takerAmount) / parseFloat(ord.order.makerAmount)).toFixed(2) : "0.00"}</TableCell>
-                        <TableCell className="text-right text-[10px] font-mono">{(parseFloat(ord.amountFilled || "0") / 1e18).toFixed(1)} / {(parseFloat(ord.amount || "0") / 1e18).toFixed(1)}</TableCell>
+              <TabsContent value="holdings" className="mt-0 focus-visible:outline-none">
+                <div className="bg-zinc-900/20 backdrop-blur-md rounded-3xl border border-zinc-800/50 overflow-hidden shadow-2xl">
+                  <Table>
+                    <TableHeader className="bg-black/40">
+                      <TableRow className="border-zinc-800/50 hover:bg-transparent">
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 px-6">Market</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Side</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Avg Price</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 text-right px-6">Total Shares</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {derivedHoldings.length === 0 ? (
+                        <TableRow className="border-zinc-800/50 hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-zinc-500 font-medium">No valid holdings found on-chain</TableCell></TableRow>
+                      ) : (
+                        derivedHoldings.map((h, idx) => (
+                          <TableRow key={idx} className="border-zinc-800/30 hover:bg-zinc-800/20 transition-colors">
+                            <TableCell className="font-semibold text-sm truncate max-w-[300px] px-6 py-5 text-zinc-200">{h.asset.market.question}</TableCell>
+                            <TableCell><Badge variant="outline" className={`border-none ${h.side === 'YES' ? 'bg-emerald-950/40 text-emerald-400' : 'bg-rose-950/40 text-rose-400'}`}>{h.side}</Badge></TableCell>
+                            <TableCell className="font-mono text-sm text-zinc-400">${parseFloat(h.avgPrice).toFixed(4)}</TableCell>
+                            <TableCell className="text-right font-mono text-zinc-200 font-bold text-sm px-6">{parseFloat(h.quantity).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+              <TabsContent value="active" className="mt-0 focus-visible:outline-none">
+                <div className="bg-zinc-900/20 backdrop-blur-md rounded-3xl border border-zinc-800/50 overflow-hidden shadow-2xl">
+                  <Table>
+                    <TableHeader className="bg-black/40">
+                      <TableRow className="border-zinc-800/50 hover:bg-transparent">
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 px-6">Order ID</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Action</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Limit Price</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 text-right px-6">Progress</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {portfolioOrders.length === 0 ? (
+                        <TableRow className="border-zinc-800/50 hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-zinc-500 font-medium">No open limit orders found</TableCell></TableRow>
+                      ) : portfolioOrders.map((ord, idx) => (
+                        <TableRow key={idx} className="border-zinc-800/30 hover:bg-zinc-800/20 transition-colors">
+                          <TableCell className="font-mono text-xs text-zinc-500 px-6 py-5">{ord.id.slice(0, 12)}...</TableCell>
+                          <TableCell><Badge variant="outline" className={`border-none ${ord.order?.side === 0 ? "bg-emerald-950/40 text-emerald-400" : "bg-rose-950/40 text-rose-400"}`}>{ord.order?.side === 0 ? "BUY" : "SELL"}</Badge></TableCell>
+                          <TableCell className="font-mono text-sm text-zinc-400">${ord.order?.makerAmount && ord.order?.takerAmount ? (parseFloat(ord.order.takerAmount) / parseFloat(ord.order.makerAmount)).toFixed(2) : "0.00"}</TableCell>
+                          <TableCell className="text-right font-mono text-sm font-medium px-6 text-zinc-300">{(parseFloat(ord.amountFilled || "0") / 1e18).toFixed(1)} / {(parseFloat(ord.amount || "0") / 1e18).toFixed(1)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </TabsContent>
 
-              <TabsContent value="history" className="mt-4 bg-zinc-900/30 rounded-xl border border-zinc-800">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-zinc-800">
-                      <TableHead className="text-zinc-500">Market</TableHead>
-                      <TableHead className="text-zinc-500">Action</TableHead>
-                      <TableHead className="text-zinc-500">Price</TableHead>
-                      <TableHead className="text-zinc-500 text-right">Filled</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {portfolioHistory.length === 0 ? (
-                      <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No trade history found</TableCell></TableRow>
-                    ) : portfolioHistory.map((ord: any, idx: number) => {
-                      const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
-                      const question = market?.question || `Market #${ord.marketId}`;
-                      const isBuy = ord.order?.side === 0;
-                      const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
-                      const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
-                      const price = isBuy && takerAmt > 0 ? (makerAmt / takerAmt).toFixed(4) : makerAmt > 0 ? (takerAmt / makerAmt).toFixed(4) : "0.00";
-                      const filled = parseFloat(ord.amountFilled || "0") / 1e18;
-                      const total = parseFloat(ord.amount || "0") / 1e18;
-                      return (
-                        <TableRow key={idx} className="border-zinc-800">
-                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{question}</TableCell>
-                          <TableCell><Badge className={isBuy ? "bg-green-950 text-green-400" : "bg-red-950 text-red-400"}>{isBuy ? "BUY" : "SELL"}</Badge></TableCell>
-                          <TableCell className="font-mono text-xs">${price}</TableCell>
-                          <TableCell className="text-right font-mono text-xs">{filled.toFixed(2)} / {total.toFixed(2)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              <TabsContent value="history" className="mt-0 focus-visible:outline-none">
+                <div className="bg-zinc-900/20 backdrop-blur-md rounded-3xl border border-zinc-800/50 overflow-hidden shadow-2xl">
+                  <Table>
+                    <TableHeader className="bg-black/40">
+                      <TableRow className="border-zinc-800/50 hover:bg-transparent">
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 px-6">Market</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Action</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14">Exec Price</TableHead>
+                        <TableHead className="text-zinc-400 font-bold tracking-wide uppercase text-xs h-14 text-right px-6">Filled Shares</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {portfolioHistory.length === 0 ? (
+                        <TableRow className="border-zinc-800/50 hover:bg-transparent"><TableCell colSpan={4} className="text-center py-16 text-zinc-500 font-medium">No trade history found</TableCell></TableRow>
+                      ) : portfolioHistory.map((ord: any, idx: number) => {
+                        const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
+                        const question = market?.question || `Market #${ord.marketId}`;
+                        const isBuy = ord.order?.side === 0;
+                        const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
+                        const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
+                        const price = isBuy && takerAmt > 0 ? (makerAmt / takerAmt).toFixed(4) : makerAmt > 0 ? (takerAmt / makerAmt).toFixed(4) : "0.00";
+                        const filled = parseFloat(ord.amountFilled || "0") / 1e18;
+                        const total = parseFloat(ord.amount || "0") / 1e18;
+                        return (
+                          <TableRow key={idx} className="border-zinc-800/30 hover:bg-zinc-800/20 transition-colors">
+                            <TableCell className="font-semibold text-sm truncate max-w-[300px] px-6 py-5 text-zinc-200">{question}</TableCell>
+                            <TableCell><Badge variant="outline" className={`border-none ${isBuy ? "bg-emerald-950/40 text-emerald-400" : "bg-rose-950/40 text-rose-400"}`}>{isBuy ? "BUY" : "SELL"}</Badge></TableCell>
+                            <TableCell className="font-mono text-sm text-zinc-400">${price}</TableCell>
+                            <TableCell className="text-right font-mono text-sm px-6 text-zinc-300">{filled.toFixed(2)} <span className="text-zinc-600">/ {total.toFixed(2)}</span></TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
@@ -741,50 +747,51 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-6">
-              <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-                <CardHeader>
+              <Card className="bg-zinc-900/30 border-zinc-800/50 overflow-hidden backdrop-blur-sm shadow-2xl">
+                <div className="h-1 bg-gradient-to-r from-blue-500/80 via-indigo-500/80 to-purple-500/80" />
+                <CardHeader className="pb-4">
                   <Tabs value={vaultTab} onValueChange={(v: any) => setVaultTab(v)}>
-                    <TabsList className="grid w-full grid-cols-2 bg-black">
-                      <TabsTrigger value="borrow">Borrow</TabsTrigger>
-                      <TabsTrigger value="liquidity">USDT Pool</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 bg-black/60 p-1 rounded-xl border border-zinc-800/50">
+                      <TabsTrigger value="borrow" className="rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-xs font-medium">Borrow</TabsTrigger>
+                      <TabsTrigger value="liquidity" className="rounded-lg data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-xs font-medium">USDT Pool</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5 px-5 pb-6">
                   {vaultTab === 'borrow' ? (
-                    <div className="space-y-4">
-                      <div className="grid gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-5">
+                      <div className="grid gap-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
                         {derivedHoldings.map((pos) => (
-                          <div key={pos.asset.id} onClick={() => setSelectedPositionId(pos.asset.id)} className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedPositionId === pos.asset.id ? 'bg-indigo-500/10 border-indigo-500' : 'bg-black border-zinc-800'}`}>
-                            <div className="flex justify-between text-[10px] font-bold mb-1">
-                              <span className={pos.side === 'YES' ? 'text-green-400' : 'text-red-400'}>{pos.side}</span>
-                              <span className="text-zinc-600">Hold: {parseFloat(pos.quantity).toFixed(2)}</span>
+                          <div key={pos.asset.id} onClick={() => setSelectedPositionId(pos.asset.id)} className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-300 ${selectedPositionId === pos.asset.id ? 'bg-indigo-500/10 border-indigo-500/50 shadow-inner shadow-indigo-500/10' : 'bg-black/50 border-zinc-800/60 hover:border-zinc-700'}`}>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <Badge variant="outline" className={`text-[9px] px-1.5 py-0 rounded border-none ${pos.side === 'YES' ? 'bg-emerald-950/50 text-emerald-400' : 'bg-rose-950/50 text-rose-400'}`}>{pos.side}</Badge>
+                              <span className="text-[10px] font-mono text-zinc-400 font-medium">Bal: <span className="text-zinc-200">{parseFloat(pos.quantity).toFixed(2)}</span></span>
                             </div>
-                            <div className="text-[11px] truncate text-zinc-300 font-medium">{pos.asset?.market?.question || "Unknown Market"}</div>
+                            <div className="text-[11px] leading-snug line-clamp-2 text-zinc-300 font-medium">{pos.asset?.market?.question || "Unknown Market"}</div>
                           </div>
                         ))}
-                        {derivedHoldings.length === 0 && <div className="text-center py-4 text-zinc-600 text-xs italic">Connect & visit Portfolio to load holdings</div>}
+                        {derivedHoldings.length === 0 && <div className="text-center py-8 text-zinc-600 border border-dashed border-zinc-800/50 rounded-xl bg-black/20 text-xs mt-2">No active collateral available</div>}
                       </div>
 
                       {selectedPositionId && (
-                        <div className="space-y-4 animate-in slide-in-from-top-2">
+                        <div className="space-y-4 animate-in slide-in-from-top-2 fade-in duration-300">
                           {(() => {
                             const pos = derivedHoldings.find(p => p.asset.id === selectedPositionId);
                             if (!pos) return null;
                             return (
                               <>
                                 <div className="relative">
-                                  <Input type="number" placeholder="Enter amount to lock" className="bg-black border-zinc-800 h-12 pt-5" value={borrowAmount} onChange={e => setBorrowAmount(e.target.value)} />
-                                  <span className="absolute left-3 top-1.5 text-[10px] font-bold text-zinc-500 uppercase">Collateral Amount</span>
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-400">{pos.side}</span>
+                                  <Input type="number" placeholder="Enter amount to lock" className="bg-black/80 border-zinc-800 h-14 pt-5 pb-2 px-4 shadow-inner text-lg font-mono placeholder:text-zinc-600 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50" value={borrowAmount} onChange={e => setBorrowAmount(e.target.value)} />
+                                  <span className="absolute left-4 top-2 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Collateral Amount</span>
+                                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold font-mono text-indigo-400">{pos.side}</span>
                                 </div>
-                                <div className="bg-black/50 p-3 rounded-lg border border-zinc-800 text-[11px]">
-                                  <div className="flex justify-between mb-1"><span className="text-zinc-500">Value:</span><span className="text-zinc-300 font-mono">${(parseFloat(borrowAmount || "0") * parseFloat(pos.asset.price)).toFixed(2)}</span></div>
-                                  <div className="flex justify-between font-bold"><span className="text-zinc-500">Max USDT Borrow:</span><span className="text-yellow-500 font-mono">${(parseFloat(borrowAmount || "0") * parseFloat(pos.asset.price) * 0.45).toFixed(2)}</span></div>
+                                <div className="bg-black/40 p-4 rounded-xl border border-zinc-800/60 text-xs space-y-2.5">
+                                  <div className="flex justify-between items-center"><span className="text-zinc-500 font-medium">Collateral Value</span><span className="text-zinc-300 font-mono">${(parseFloat(borrowAmount || "0") * parseFloat(pos.asset.price)).toFixed(2)}</span></div>
+                                  <div className="h-px w-full bg-zinc-800/50" />
+                                  <div className="flex justify-between items-center"><span className="text-zinc-400 font-medium tracking-wide">Max USDT Borrow</span><span className="text-yellow-400 font-mono font-bold text-sm">${(parseFloat(borrowAmount || "0") * parseFloat(pos.asset.price) * 0.45).toFixed(2)}</span></div>
                                 </div>
-                                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 font-bold shadow-lg shadow-indigo-500/20" disabled={isVaultActionLoading} onClick={() => handleVaultDeposit(pos)}>
-                                  {isVaultActionLoading ? "Processing..." : "Collateralize & Borrow"}
+                                <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white h-12 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition-all duration-300" disabled={isVaultActionLoading} onClick={() => handleVaultDeposit(pos)}>
+                                  {isVaultActionLoading ? "Processing Transaction..." : "Collateralize & Borrow USDT"}
                                 </Button>
                               </>
                             )
@@ -793,25 +800,29 @@ export default function Dashboard() {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="p-3 bg-green-500/5 rounded-xl border border-green-500/10 text-center">
-                          <div className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-0.5">Total Supply</div>
-                          <div className="text-lg font-black text-white">${totalPoolLiq ? parseFloat(formatUnits(totalPoolLiq as bigint, 18)).toFixed(6) : '0.00'}</div>
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3.5 bg-black/40 rounded-xl border border-zinc-800/50 text-center flex flex-col justify-center items-center shadow-inner">
+                          <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Supply</div>
+                          <div className="text-sm font-mono text-emerald-400">${totalPoolLiq ? parseFloat(formatUnits(totalPoolLiq as bigint, 18)).toFixed(2) : '0.00'}</div>
                         </div>
-                        <div className="p-3 bg-yellow-500/5 rounded-xl border border-yellow-500/10 text-center">
-                          <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-0.5">Borrowed</div>
-                          <div className="text-lg font-black text-white">${totalBorrowedVal ? parseFloat(formatUnits(totalBorrowedVal as bigint, 18)).toFixed(6) : '0.00'}</div>
+                        <div className="p-3.5 bg-black/40 rounded-xl border border-zinc-800/50 text-center flex flex-col justify-center items-center shadow-inner">
+                          <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Debt</div>
+                          <div className="text-sm font-mono text-rose-400">${totalBorrowedVal ? parseFloat(formatUnits(totalBorrowedVal as bigint, 18)).toFixed(2) : '0.00'}</div>
                         </div>
-                        <div className="p-3 bg-blue-500/5 rounded-xl border border-blue-500/10 text-center">
-                          <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-0.5">Available</div>
-                          <div className="text-lg font-black text-white">${vaultUsdtBalance ? parseFloat(formatUnits(vaultUsdtBalance as bigint, 18)).toFixed(6) : '0.00'}</div>
+                        <div className="p-3.5 bg-black/40 rounded-xl border border-zinc-800/50 text-center flex flex-col justify-center items-center shadow-inner relative overflow-hidden">
+                          <div className="absolute inset-0 bg-blue-500/5" />
+                          <div className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1.5 relative">Available</div>
+                          <div className="text-sm font-mono text-white font-medium relative">${vaultUsdtBalance ? parseFloat(formatUnits(vaultUsdtBalance as bigint, 18)).toFixed(2) : '0.00'}</div>
                         </div>
                       </div>
-                      <Input type="number" placeholder="0.00" className="bg-black border-zinc-800 h-11" value={liquidityAmount} onChange={e => setLiquidityAmount(e.target.value)} />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" className="h-11 border-zinc-800" onClick={() => { handleLpAction('WITHDRAW').then(refreshVaultStats); }} disabled={isLpActionLoading}>Withdraw</Button>
-                        <Button className="h-11 bg-green-600 hover:bg-green-700 font-bold" onClick={() => { handleLpAction('SUPPLY').then(refreshVaultStats); }} disabled={isLpActionLoading}>Supply USDT</Button>
+                      <div className="relative">
+                        <Input type="number" placeholder="0.00" className="bg-black/80 border-zinc-800 h-14 pl-10 pr-4 shadow-inner text-lg font-mono placeholder:text-zinc-700 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50" value={liquidityAmount} onChange={e => setLiquidityAmount(e.target.value)} />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-zinc-500">$</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button variant="outline" className="h-12 border-zinc-800/80 bg-black/40 hover:bg-zinc-900 rounded-xl text-xs font-semibold" onClick={() => { handleLpAction('WITHDRAW').then(refreshVaultStats); }} disabled={isLpActionLoading}>Withdraw LP</Button>
+                        <Button className="h-12 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20" onClick={() => { handleLpAction('SUPPLY').then(refreshVaultStats); }} disabled={isLpActionLoading}>Supply USDT</Button>
                       </div>
                     </div>
                   )}
@@ -819,21 +830,27 @@ export default function Dashboard() {
               </Card>
 
               {selectedMarket && (
-                <Card className="bg-zinc-900 border-zinc-800 border-indigo-500/30 overflow-hidden shadow-2xl shadow-indigo-500/10">
-                  <div className="h-1 bg-indigo-500" />
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-bold truncate">{selectedMarket.question}</CardTitle>
-                    <p className="text-[10px] text-zinc-500 uppercase font-black">Quick Trade (Predict.fun)</p>
+                <Card className="bg-zinc-900/40 border-zinc-800/60 backdrop-blur-md overflow-hidden shadow-2xl shadow-indigo-500/5 transition-all animate-in fade-in slide-in-from-bottom-2">
+                  <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                  <CardHeader className="pb-3 pt-5 px-5">
+                    <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black mb-1.5 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" /> Quick Trade</p>
+                    <CardTitle className="text-sm font-semibold leading-snug">{selectedMarket.question}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Input type="number" placeholder="USDT Amount" className="bg-black border-zinc-800" value={tradeAmount} onChange={e => setTradeAmount(e.target.value)} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button className="bg-green-600 hover:bg-green-700 text-white font-bold" onClick={() => handlePredictTrade('YES')} disabled={isTrading}>Buy YES</Button>
-                      <Button className="bg-red-600 hover:bg-red-700 text-white font-bold" onClick={() => handlePredictTrade('NO')} disabled={isTrading}>Buy NO</Button>
+                  <CardContent className="space-y-4 px-5 pb-5">
+                    <div className="relative">
+                      <Input type="number" placeholder="Enter USDT to spend/receive" className="bg-black/80 border-zinc-800 h-12 text-sm font-mono shadow-inner transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/50" value={tradeAmount} onChange={e => setTradeAmount(e.target.value)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="border-green-600/50 text-green-500 hover:bg-green-950/30 font-bold" onClick={() => handlePredictSell('YES')} disabled={isTrading}>Sell YES</Button>
-                      <Button variant="outline" className="border-red-600/50 text-red-500 hover:bg-red-950/30 font-bold" onClick={() => handlePredictSell('NO')} disabled={isTrading}>Sell NO</Button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button className="bg-emerald-600/90 hover:bg-emerald-500 text-white font-semibold h-11 rounded-lg shadow-lg shadow-emerald-500/10 text-xs" onClick={() => handlePredictTrade('YES')} disabled={isTrading}>Buy YES</Button>
+                      <Button className="bg-rose-600/90 hover:bg-rose-500 text-white font-semibold h-11 rounded-lg shadow-lg shadow-rose-500/10 text-xs" onClick={() => handlePredictTrade('NO')} disabled={isTrading}>Buy NO</Button>
+                    </div>
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-800/50" /></div>
+                      <div className="relative flex justify-center text-xs uppercase"><span className="bg-zinc-900/80 px-2 text-zinc-600 font-bold text-[9px] tracking-wider">Close Position</span></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button variant="outline" className="border-emerald-900/30 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-900/40 font-semibold h-11 rounded-lg text-xs" onClick={() => handlePredictSell('YES')} disabled={isTrading}>Sell YES</Button>
+                      <Button variant="outline" className="border-rose-900/30 text-rose-400 bg-rose-950/20 hover:bg-rose-900/40 font-semibold h-11 rounded-lg text-xs" onClick={() => handlePredictSell('NO')} disabled={isTrading}>Sell NO</Button>
                     </div>
                   </CardContent>
                 </Card>
