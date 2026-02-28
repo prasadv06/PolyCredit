@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { UnifiedMarket } from "../../../shared/types";
 import { BrowserProvider, parseUnits, formatUnits, ethers } from "ethers";
 import { OrderBuilder, ChainId, Side } from "@predictdotfun/sdk";
@@ -74,6 +74,50 @@ export default function Dashboard() {
 
   const { writeContractAsync } = useWriteContract();
   const [mounted, setMounted] = useState<boolean>(false);
+
+  const derivedHoldings = useMemo(() => {
+    const netMap: Record<string, any> = {};
+    for (const ord of portfolioHistory) {
+      const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
+      const question = market?.question || `Market #${ord.marketId}`;
+      const isBuy = ord.order?.side === 0;
+      const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
+      const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
+      const tokenId = ord.order?.tokenId || "unknown";
+
+      let side = "YES";
+      if (market && (market as any).noTokenId === tokenId) side = "NO";
+
+      const key = `${ord.marketId}-${side}`;
+      if (!netMap[key]) netMap[key] = { marketId: ord.marketId, tokenId, question, side, shares: 0, totalCost: 0, price: "0", isYieldBearing: market?.isYieldBearing || true };
+
+      const filledRaw = parseFloat(ord.amountFilled || "0") / 1e18;
+      if (isBuy) {
+        const price = takerAmt > 0 ? makerAmt / takerAmt : 0.5;
+        const sharesBought = takerAmt > 0 ? filledRaw / price : 0;
+        netMap[key].shares += sharesBought;
+        netMap[key].totalCost += filledRaw;
+      } else {
+        netMap[key].shares -= filledRaw;
+      }
+
+      if (market) {
+        netMap[key].price = side === "YES" ? market.yesPrice.toString() : market.noPrice.toString();
+      } else {
+        netMap[key].price = netMap[key].shares > 0 ? (netMap[key].totalCost / netMap[key].shares).toString() : "0.5";
+      }
+    }
+
+    return Object.values(netMap)
+      .filter(h => h.shares > 0.001)
+      .map(h => ({
+        asset: { id: `${h.marketId}-${h.side}`, market: { question: h.question, isYieldBearing: h.isYieldBearing }, onChainId: h.tokenId, price: h.price },
+        side: h.side,
+        quantity: h.shares.toString(),
+        totalCost: h.totalCost,
+        avgPrice: h.shares > 0 ? (h.totalCost / h.shares).toString() : "0"
+      }));
+  }, [portfolioHistory, liveMarkets]);
 
   // --- On-chain vault stats ---
   const { data: totalPoolLiq, refetch: refetchPool } = useReadContract({
@@ -605,49 +649,18 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(() => {
-                      // Compute net holdings from filled orders (portfolioHistory) at render time
-                      const netMap: Record<string, { question: string; side: string; shares: number; totalCost: number }> = {};
-                      for (const ord of portfolioHistory) {
-                        const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
-                        const question = market?.question || `Market #${ord.marketId}`;
-                        const isBuy = ord.order?.side === 0;
-                        const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
-                        const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
-                        const tokenId = ord.order?.tokenId || "unknown";
-
-                        // Determine side
-                        let side = "YES";
-                        if (market && (market as any).noTokenId === tokenId) side = "NO";
-
-                        const key = `${ord.marketId}-${side}`;
-                        if (!netMap[key]) netMap[key] = { question, side, shares: 0, totalCost: 0 };
-
-                        const filledRaw = parseFloat(ord.amountFilled || "0") / 1e18;
-                        if (isBuy) {
-                          // BUY: makerAmount=USDT, takerAmount=shares. amountFilled=USDT filled
-                          const price = takerAmt > 0 ? makerAmt / takerAmt : 0.5;
-                          const sharesBought = takerAmt > 0 ? filledRaw / price : 0;
-                          netMap[key].shares += sharesBought;
-                          netMap[key].totalCost += filledRaw;
-                        } else {
-                          // SELL: makerAmount=shares, takerAmount=USDT. amountFilled=shares filled
-                          netMap[key].shares -= filledRaw;
-                        }
-                      }
-                      const rows = Object.values(netMap).filter(h => h.shares > 0.001);
-                      if (rows.length === 0) {
-                        return <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found — trade to see positions here</TableCell></TableRow>;
-                      }
-                      return rows.map((h, idx) => (
+                    {derivedHoldings.length === 0 ? (
+                      <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found — trade to see positions here</TableCell></TableRow>
+                    ) : (
+                      derivedHoldings.map((h, idx) => (
                         <TableRow key={idx} className="border-zinc-800">
-                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{h.question}</TableCell>
+                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{h.asset.market.question}</TableCell>
                           <TableCell><Badge className={h.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{h.side}</Badge></TableCell>
-                          <TableCell className="font-mono text-xs">${h.shares > 0 ? (h.totalCost / h.shares).toFixed(4) : "0.0000"}</TableCell>
-                          <TableCell className="text-right font-mono text-xs">{h.shares.toFixed(2)}</TableCell>
+                          <TableCell className="font-mono text-xs">${parseFloat(h.avgPrice).toFixed(4)}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{parseFloat(h.quantity).toFixed(2)}</TableCell>
                         </TableRow>
-                      ));
-                    })()}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </TabsContent>
@@ -741,22 +754,22 @@ export default function Dashboard() {
                   {vaultTab === 'borrow' ? (
                     <div className="space-y-4">
                       <div className="grid gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                        {portfolioPositions.map((pos) => (
+                        {derivedHoldings.map((pos) => (
                           <div key={pos.asset.id} onClick={() => setSelectedPositionId(pos.asset.id)} className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedPositionId === pos.asset.id ? 'bg-indigo-500/10 border-indigo-500' : 'bg-black border-zinc-800'}`}>
                             <div className="flex justify-between text-[10px] font-bold mb-1">
                               <span className={pos.side === 'YES' ? 'text-green-400' : 'text-red-400'}>{pos.side}</span>
-                              <span className="text-zinc-600">Hold: {parseFloat(pos.quantity).toFixed(1)}</span>
+                              <span className="text-zinc-600">Hold: {parseFloat(pos.quantity).toFixed(2)}</span>
                             </div>
                             <div className="text-[11px] truncate text-zinc-300 font-medium">{pos.asset?.market?.question || "Unknown Market"}</div>
                           </div>
                         ))}
-                        {portfolioPositions.length === 0 && <div className="text-center py-4 text-zinc-600 text-xs italic">Connect & visit Portfolio to load holdings</div>}
+                        {derivedHoldings.length === 0 && <div className="text-center py-4 text-zinc-600 text-xs italic">Connect & visit Portfolio to load holdings</div>}
                       </div>
 
                       {selectedPositionId && (
                         <div className="space-y-4 animate-in slide-in-from-top-2">
                           {(() => {
-                            const pos = portfolioPositions.find(p => p.asset.id === selectedPositionId);
+                            const pos = derivedHoldings.find(p => p.asset.id === selectedPositionId);
                             if (!pos) return null;
                             return (
                               <>
