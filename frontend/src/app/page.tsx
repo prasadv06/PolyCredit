@@ -59,7 +59,7 @@ export default function Dashboard() {
   const [isAgentRunning, setIsAgentRunning] = useState<boolean>(false);
 
   // --- Portfolio UI State ---
-  const [activeView, setActiveView] = useState<"home" | "portfolio">("home");
+  const [activeView, setActiveView] = useState<"home" | "markets" | "portfolio">("home");
   const [portfolioPositions, setPortfolioPositions] = useState<any[]>([]);
   const [portfolioOrders, setPortfolioOrders] = useState<any[]>([]);
   const [portfolioHistory, setPortfolioHistory] = useState<any[]>([]);
@@ -605,6 +605,7 @@ export default function Dashboard() {
             </div>
             <nav className="flex items-center gap-2">
               <Button variant={activeView === 'home' ? 'default' : 'ghost'} onClick={() => setActiveView('home')}>Home</Button>
+              <Button variant={activeView === 'markets' ? 'default' : 'ghost'} onClick={() => setActiveView('markets')}>Markets</Button>
               <Button variant={activeView === 'portfolio' ? 'default' : 'ghost'} onClick={() => { setActiveView('portfolio'); loadPortfolio(); }}>Portfolio</Button>
             </nav>
           </div>
@@ -725,8 +726,8 @@ export default function Dashboard() {
               </TabsContent>
             </Tabs>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        ) : activeView === 'markets' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="lg:col-span-2 space-y-8">
               <section>
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-400">
@@ -837,6 +838,43 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="space-y-6 max-w-4xl">
+              <h1 className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-br from-white to-zinc-500 bg-clip-text text-transparent leading-tight">
+                The Future of <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">Web3 Credit</span>
+              </h1>
+              <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-medium leading-relaxed">
+                Trade decentralized prediction markets and instantly unlock your liquidity. Deposit your active positions into the Aegis Vault to borrow USDT without liquidating your upside.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+              <Button size="lg" className="h-14 px-8 text-base font-bold bg-indigo-600 hover:bg-indigo-700 shadow-2xl shadow-indigo-500/20" onClick={() => setActiveView('markets')}>
+                Explore Markets
+              </Button>
+              <Button size="lg" variant="outline" className="h-14 px-8 text-base font-bold border-zinc-800 hover:bg-zinc-900" onClick={() => { setActiveView('portfolio'); loadPortfolio(); }}>
+                Manage Portfolio
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mt-24 pt-16 border-t border-zinc-900/50">
+              <div className="p-8 rounded-3xl bg-zinc-900/20 border border-zinc-800/50 flex flex-col items-center text-center space-y-4 hover:border-indigo-500/30 transition-colors">
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-black text-xl mb-2">1</div>
+                <h3 className="text-zinc-200 font-bold text-lg">Predict Outcomes</h3>
+                <p className="text-zinc-500 text-sm leading-relaxed">Buy Conditional YES/NO shares on the BNB Mainnet via the high-performance Predict.fun limit orderbook.</p>
+              </div>
+              <div className="p-8 rounded-3xl bg-zinc-900/20 border border-zinc-800/50 flex flex-col items-center text-center space-y-4 hover:border-purple-500/30 transition-colors">
+                <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black text-xl mb-2">2</div>
+                <h3 className="text-zinc-200 font-bold text-lg">Deposit Collateral</h3>
+                <p className="text-zinc-500 text-sm leading-relaxed">Lock your active prediction shares securely into our non-custodial smart Aegis Vault to establish a credit line.</p>
+              </div>
+              <div className="p-8 rounded-3xl bg-zinc-900/20 border border-zinc-800/50 flex flex-col items-center text-center space-y-4 hover:border-emerald-500/30 transition-colors">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-black text-xl mb-2">3</div>
+                <h3 className="text-zinc-200 font-bold text-lg">Borrow Cash</h3>
+                <p className="text-zinc-500 text-sm leading-relaxed">Instantly borrow liquid USDT against your positions. Repay your debt only when the market officially resolves!</p>
+              </div>
             </div>
           </div>
         )}
