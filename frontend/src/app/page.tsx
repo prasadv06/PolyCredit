@@ -568,7 +568,7 @@ export default function Dashboard() {
 
             <Tabs defaultValue="holdings">
               <TabsList className="bg-zinc-900 border border-zinc-800">
-                <TabsTrigger value="holdings">Holdings ({portfolioPositions.length})</TabsTrigger>
+                <TabsTrigger value="holdings">Holdings ({portfolioHistory.length > 0 ? "✓" : "0"})</TabsTrigger>
                 <TabsTrigger value="active">Active Orders ({portfolioOrders.length})</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
@@ -578,24 +578,54 @@ export default function Dashboard() {
                     <TableRow className="border-zinc-800">
                       <TableHead className="text-zinc-500">Market</TableHead>
                       <TableHead className="text-zinc-500">Side</TableHead>
-                      <TableHead className="text-zinc-500">Price</TableHead>
+                      <TableHead className="text-zinc-500">Avg Price</TableHead>
                       <TableHead className="text-zinc-500 text-right">Shares</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {portfolioPositions.map((pos: any, idx: number) => {
-                      const market = liveMarkets.find(m => m.id === `predict-${pos.marketId}`);
-                      const question = market?.question || pos.asset?.market?.question || `Market #${pos.marketId || "?"}`;
-                      return (
+                    {(() => {
+                      // Compute net holdings from filled orders (portfolioHistory) at render time
+                      const netMap: Record<string, { question: string; side: string; shares: number; totalCost: number }> = {};
+                      for (const ord of portfolioHistory) {
+                        const market = liveMarkets.find(m => m.id === `predict-${ord.marketId}`);
+                        const question = market?.question || `Market #${ord.marketId}`;
+                        const isBuy = ord.order?.side === 0;
+                        const makerAmt = parseFloat(ord.order?.makerAmount || "0") / 1e18;
+                        const takerAmt = parseFloat(ord.order?.takerAmount || "0") / 1e18;
+                        const tokenId = ord.order?.tokenId || "unknown";
+
+                        // Determine side
+                        let side = "YES";
+                        if (market && (market as any).noTokenId === tokenId) side = "NO";
+
+                        const key = `${ord.marketId}-${side}`;
+                        if (!netMap[key]) netMap[key] = { question, side, shares: 0, totalCost: 0 };
+
+                        const filledRaw = parseFloat(ord.amountFilled || "0") / 1e18;
+                        if (isBuy) {
+                          // BUY: makerAmount=USDT, takerAmount=shares. amountFilled=USDT filled
+                          const price = takerAmt > 0 ? makerAmt / takerAmt : 0.5;
+                          const sharesBought = takerAmt > 0 ? filledRaw / price : 0;
+                          netMap[key].shares += sharesBought;
+                          netMap[key].totalCost += filledRaw;
+                        } else {
+                          // SELL: makerAmount=shares, takerAmount=USDT. amountFilled=shares filled
+                          netMap[key].shares -= filledRaw;
+                        }
+                      }
+                      const rows = Object.values(netMap).filter(h => h.shares > 0.001);
+                      if (rows.length === 0) {
+                        return <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found — trade to see positions here</TableCell></TableRow>;
+                      }
+                      return rows.map((h, idx) => (
                         <TableRow key={idx} className="border-zinc-800">
-                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{question}</TableCell>
-                          <TableCell><Badge className={pos.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{pos.side}</Badge></TableCell>
-                          <TableCell className="font-mono text-xs">${pos.asset?.price && parseFloat(pos.asset.price) > 0 ? parseFloat(pos.asset.price).toFixed(4) : "0.5000"}</TableCell>
-                          <TableCell className="text-right font-mono text-xs">{(parseFloat(pos.quantity) || 0).toFixed(2)}</TableCell>
+                          <TableCell className="font-semibold text-xs truncate max-w-[200px]">{h.question}</TableCell>
+                          <TableCell><Badge className={h.side === 'YES' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}>{h.side}</Badge></TableCell>
+                          <TableCell className="font-mono text-xs">${h.shares > 0 ? (h.totalCost / h.shares).toFixed(4) : "0.0000"}</TableCell>
+                          <TableCell className="text-right font-mono text-xs">{h.shares.toFixed(2)}</TableCell>
                         </TableRow>
-                      );
-                    })}
-                    {portfolioPositions.length === 0 && <TableRow className="border-zinc-800"><TableCell colSpan={4} className="text-center py-8 text-zinc-500">No holdings found</TableCell></TableRow>}
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </TabsContent>
