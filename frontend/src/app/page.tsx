@@ -184,12 +184,18 @@ export default function Dashboard() {
   }, [address]);
 
   const logToTerminal = async (message: string, data?: any, type: "info" | "error" = "info") => {
-    console[type === "error" ? "error" : "log"](message, data || "");
+    let safeData = data || "";
+    try {
+      if (typeof data === "object") safeData = JSON.stringify(data);
+    } catch {
+      safeData = String(data);
+    }
+    console[type === "error" ? "error" : "log"](message, safeData);
     try {
       await fetch(`${AGENT_API_BASE}/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, data, type })
+        body: JSON.stringify({ message, data: safeData, type })
       });
     } catch (e) { }
   };
